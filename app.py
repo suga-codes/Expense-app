@@ -1,4 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+
+from flask import Flask, render_template, request, redirect, session
+
+app = Flask(__name__)
+app.secret_key = "expense-secret-key"from flask import Flask, render_template, request, redirect, url_for, session
 import os
 
 app = Flask(__name__)
