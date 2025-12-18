@@ -6,11 +6,10 @@ app.secret_key = "expense_secret_key"   # session ku
 
 # Temporary user storage (database illa)
 users = {}
-
-# ------------------ WELCOME PAGE ------------------
 @app.route("/")
-def welcome():
-    return render_template("welcome.html")
+def root():
+    return redirect("/login")
+    
 
 # ------------------ REGISTER ------------------
 @app.route("/register", methods=["GET", "POST"])
