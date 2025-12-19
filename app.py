@@ -1,70 +1,53 @@
-
-from flask import Flask, render_template, request, redirect, session
-
-app = Flask(__name__)
-app.secret_key = "expense-secret-key"from flask import Flask, render_template, request, redirect, url_for, session
-import os
+from flask import Flask, render_template, request, redirect
+import json
+from datetime import date
 
 app = Flask(__name__)
-app.secret_key = "expense_secret_key"   # session ku
+FILE = "expenses.json"
 
-# Temporary user storage (database illa)
-users = {}
+def load_expenses():
+    try:
+        with open(FILE, "r") as f:
+            return json.load(f)
+    except:
+        return []
+
+def save_expenses(data):
+    with open(FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
 @app.route("/")
-def root():
-    return redirect("/login")
-    
+def welcome():
+    return render_template("welcome.html")
 
-# ------------------ REGISTER ------------------
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        if username in users:
-            return "User already exists 😕"
-
-        users[username] = password
-        return redirect(url_for("login"))
-
-    return render_template("register.html")
-
-# ------------------ LOGIN ------------------
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        if username in users and users[username] == password:
-            session["user"] = username
-            return redirect(url_for("home"))
-        else:
-            return "Invalid username or password ❌"
-
-    return render_template("login.html")
-
-# ------------------ HOME ------------------
-@app.route("/home")
+@app.route("/home", methods=["GET", "POST"])
 def home():
-    if "user" not in session:
-        return redirect(url_for("login"))
+    expenses = load_expenses()
 
-    return render_template("home.html", user=session["user"])
+    if request.method == "POST":
+        expense = {
+            "amount": int(request.form["amount"]),
+            "category": request.form["category"],
+            "note": request.form["note"],
+            "date": str(date.today())
+        }
+        expenses.append(expense)
+        save_expenses(expenses)
+        return redirect("/home")
 
-# ------------------ LOGOUT ------------------
-@app.route("/logout")
-def logout():
-    session.pop("user", None)
-    return redirect(url_for("login"))
+    total = sum(e["amount"] for e in expenses)
+    return render_template("index.html", expenses=expenses, total=total)
 
-# ------------------ EXIT PAGE (optional) ------------------
+@app.route("/delete/<int:i>")
+def delete(i):
+    expenses = load_expenses()
+    expenses.pop(i)
+    save_expenses(expenses)
+    return redirect("/home")
+
 @app.route("/exit")
 def exit():
     return render_template("exit.html")
 
-# ------------------ RUN ------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run()
